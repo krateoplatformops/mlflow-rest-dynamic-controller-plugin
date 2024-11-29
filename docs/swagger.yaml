@@ -1,0 +1,40 @@
+basePath: /
+externalDocs:
+  description: OpenAPI
+  url: https://swagger.io/resources/open-api/
+host: localhost:8080
+info:
+  contact:
+    email: contact@krateoplatformops.io
+    name: Krateo Support
+    url: https://krateo.io
+  description: Simple wrapper around MLFlow API for Krateo Operator Generator (KOG)
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: MLFlow Plugin API for Krateo Operator Generator (KOG)
+  version: "1.0"
+paths:
+  /2.0/mlflow/experiments/get:
+    get:
+      description: Get metadata for an experiment
+      operationId: get-experiment
+      parameters:
+      - description: ID of the associated experiment
+        in: query
+        name: experiment_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get metadata for an experiment
+schemes:
+- http
+swagger: "2.0"

@@ -1,0 +1,57 @@
+{
+    "schemes": [
+        "http"
+    ],
+    "swagger": "2.0",
+    "info": {
+        "description": "Simple wrapper around MLFlow API for Krateo Operator Generator (KOG)",
+        "title": "MLFlow Plugin API for Krateo Operator Generator (KOG)",
+        "termsOfService": "http://swagger.io/terms/",
+        "contact": {
+            "name": "Krateo Support",
+            "url": "https://krateo.io",
+            "email": "contact@krateoplatformops.io"
+        },
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        },
+        "version": "1.0"
+    },
+    "host": "localhost:8080",
+    "basePath": "/",
+    "paths": {
+        "/2.0/mlflow/experiments/get": {
+            "get": {
+                "description": "Get metadata for an experiment",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Get metadata for an experiment",
+                "operationId": "get-experiment",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the associated experiment",
+                        "name": "experiment_id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "externalDocs": {
+        "description": "OpenAPI",
+        "url": "https://swagger.io/resources/open-api/"
+    }
+}
