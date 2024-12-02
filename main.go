@@ -13,10 +13,11 @@ import (
 	"syscall"
 	"time"
 
-	_ "github.com/krateoplatformops/github-rest-dynamic-controller-plugin/docs"
-	"github.com/krateoplatformops/github-rest-dynamic-controller-plugin/internal/env"
-	"github.com/krateoplatformops/github-rest-dynamic-controller-plugin/internal/handlers"
-	"github.com/krateoplatformops/github-rest-dynamic-controller-plugin/internal/handlers/experiment"
+	_ "github.com/krateoplatformops/mlflow-rest-dynamic-controller-plugin/docs"
+	"github.com/krateoplatformops/mlflow-rest-dynamic-controller-plugin/internal/env"
+	"github.com/krateoplatformops/mlflow-rest-dynamic-controller-plugin/internal/handlers"
+	"github.com/krateoplatformops/mlflow-rest-dynamic-controller-plugin/internal/handlers/experiment"
+	"github.com/krateoplatformops/mlflow-rest-dynamic-controller-plugin/internal/handlers/run"
 	httpSwagger "github.com/swaggo/http-swagger"
 )
 
@@ -76,6 +77,7 @@ func main() {
 	healthy := int32(0)
 
 	mux.Handle("GET /2.0/mlflow/experiments/get", experiment.GetExperiment(opts))
+	mux.Handle("GET /2.0/mlflow/runs/get", run.GetRun(opts))
 	mux.Handle("/swagger/", httpSwagger.WrapHandler)
 
 	server := &http.Server{

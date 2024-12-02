@@ -1,4 +1,4 @@
-package experiment
+package run
 
 import (
 	"encoding/json"
@@ -10,7 +10,7 @@ import (
 	"github.com/krateoplatformops/mlflow-rest-dynamic-controller-plugin/internal/handlers"
 )
 
-func GetExperiment(opts handlers.HandlerOptions) handlers.Handler {
+func GetRun(opts handlers.HandlerOptions) handlers.Handler {
 	return &handler{
 		HandlerOptions: opts,
 	}
@@ -22,23 +22,23 @@ type handler struct {
 	handlers.HandlerOptions
 }
 
-// @Summary Get metadata for an experiment
-// @Description Get metadata for an experiment
-// @ID get-experiment
-// @Param experiment_id query string true "ID of the associated experiment"
+// @Summary Get metadata for a run
+// @Description Get metadata for a run
+// @ID get-run
+// @Param run_id query string true "ID of the associated run"
 // @Produce json
-// @Success 200 {object} Experiment
-// @Router /2.0/mlflow/experiments/get [get]
+// @Success 200 {object} Run
+// @Router /2.0/mlflow/runs/get [get]
 func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	experiment_id := r.URL.Query().Get("experiment_id")
+	run_id := r.URL.Query().Get("run_id")
 
 	log := h.Log.With(
-		"Performing", "/2.0/mlflow/experiments/get [get]",
-		"experiment_id", experiment_id)
+		"Performing", "/2.0/mlflow/runs/get [get]",
+		"run_id", run_id)
 
 	log.Debug("Calling MLFlow Experiment API")
 
-	url := h.Server.String() + "/2.0/mlflow/experiments/get?experiment_id=" + experiment_id
+	url := h.Server.String() + "/2.0/mlflow/runs/get?run_id=" + run_id
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -62,8 +62,8 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					w.Write([]byte(fmt.Sprint("Error: ", err)))
 				}
 
-				var experiment ExperimentResponse
-				err = json.Unmarshal(body, &experiment)
+				var run RunResponse
+				err = json.Unmarshal(body, &run)
 				if err != nil {
 					h.Log.Error("unmarshalling response body", slog.Any("error", err))
 					w.Write([]byte(fmt.Sprint("Error: ", err)))
@@ -71,7 +71,13 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusOK)
-				err = json.NewEncoder(w).Encode(experiment.Experiment)
+				run.Run.RunId = run.Run.Info.RunId
+				run.Run.RunUuid = run.Run.Info.RunUuid
+				run.Run.RunName = run.Run.Info.RunName
+				run.Run.ExperimentId = run.Run.Info.ExperimentId
+				run.Run.UserId = run.Run.Info.UserId
+				run.Run.Status = run.Run.Info.Status
+				err = json.NewEncoder(w).Encode(run.Run)
 				if err != nil {
 					h.Log.Error("encoding response body", slog.Any("error", err))
 					w.Write([]byte(fmt.Sprint("Error: ", err)))

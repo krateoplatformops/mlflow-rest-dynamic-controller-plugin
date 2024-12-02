@@ -1,4 +1,4 @@
-module github.com/krateoplatformops/github-rest-dynamic-controller-plugin
+module github.com/krateoplatformops/mlflow-rest-dynamic-controller-plugin
 
 go 1.23.2
 
