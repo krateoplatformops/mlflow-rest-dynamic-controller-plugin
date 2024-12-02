@@ -42,10 +42,238 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/experiment.Experiment"
                         }
                     }
+                }
+            }
+        },
+        "/2.0/mlflow/runs/get": {
+            "get": {
+                "description": "Get metadata for a run",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Get metadata for a run",
+                "operationId": "get-run",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the associated run",
+                        "name": "run_id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/run.Run"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "experiment.Experiment": {
+            "type": "object",
+            "properties": {
+                "artifact_location": {
+                    "type": "string"
+                },
+                "creation_time": {
+                    "type": "integer"
+                },
+                "experiment_id": {
+                    "type": "string"
+                },
+                "last_update_time": {
+                    "type": "integer"
+                },
+                "lifecycle_stage": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/experiment.ExperimentTag"
+                    }
+                }
+            }
+        },
+        "experiment.ExperimentTag": {
+            "type": "object",
+            "properties": {
+                "key": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                }
+            }
+        },
+        "run.DatasetInput": {
+            "type": "object",
+            "properties": {
+                "dataset_id": {
+                    "type": "string"
+                },
+                "dataset_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "run.Metric": {
+            "type": "object",
+            "properties": {
+                "key": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "integer"
+                },
+                "value": {
+                    "type": "number"
+                }
+            }
+        },
+        "run.Param": {
+            "type": "object",
+            "properties": {
+                "key": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                }
+            }
+        },
+        "run.Run": {
+            "type": "object",
+            "properties": {
+                "artifact_uri": {
+                    "type": "string"
+                },
+                "data": {
+                    "$ref": "#/definitions/run.RunData"
+                },
+                "end_time": {
+                    "type": "integer"
+                },
+                "experiment_id": {
+                    "type": "string"
+                },
+                "info": {
+                    "$ref": "#/definitions/run.RunInfo"
+                },
+                "inputs": {
+                    "$ref": "#/definitions/run.RunInputs"
+                },
+                "lifecycle_stage": {
+                    "type": "string"
+                },
+                "run_id": {
+                    "type": "string"
+                },
+                "run_name": {
+                    "type": "string"
+                },
+                "run_uuid": {
+                    "type": "string"
+                },
+                "start_time": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "run.RunData": {
+            "type": "object",
+            "properties": {
+                "metrics": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/run.Metric"
+                    }
+                },
+                "params": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/run.Param"
+                    }
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/run.RunTag"
+                    }
+                }
+            }
+        },
+        "run.RunInfo": {
+            "type": "object",
+            "properties": {
+                "artifact_uri": {
+                    "type": "string"
+                },
+                "end_time": {
+                    "type": "integer"
+                },
+                "experiment_id": {
+                    "type": "string"
+                },
+                "lifecycle_stage": {
+                    "type": "string"
+                },
+                "run_id": {
+                    "type": "string"
+                },
+                "run_name": {
+                    "type": "string"
+                },
+                "run_uuid": {
+                    "type": "string"
+                },
+                "start_time": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "run.RunInputs": {
+            "type": "object",
+            "properties": {
+                "dataset_inputs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/run.DatasetInput"
+                    }
+                }
+            }
+        },
+        "run.RunTag": {
+            "type": "object",
+            "properties": {
+                "key": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
                 }
             }
         }

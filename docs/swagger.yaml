@@ -1,4 +1,135 @@
 basePath: /
+definitions:
+  experiment.Experiment:
+    properties:
+      artifact_location:
+        type: string
+      creation_time:
+        type: integer
+      experiment_id:
+        type: string
+      last_update_time:
+        type: integer
+      lifecycle_stage:
+        type: string
+      name:
+        type: string
+      tags:
+        items:
+          $ref: '#/definitions/experiment.ExperimentTag'
+        type: array
+    type: object
+  experiment.ExperimentTag:
+    properties:
+      key:
+        type: string
+      value:
+        type: string
+    type: object
+  run.DatasetInput:
+    properties:
+      dataset_id:
+        type: string
+      dataset_name:
+        type: string
+    type: object
+  run.Metric:
+    properties:
+      key:
+        type: string
+      timestamp:
+        type: integer
+      value:
+        type: number
+    type: object
+  run.Param:
+    properties:
+      key:
+        type: string
+      value:
+        type: string
+    type: object
+  run.Run:
+    properties:
+      artifact_uri:
+        type: string
+      data:
+        $ref: '#/definitions/run.RunData'
+      end_time:
+        type: integer
+      experiment_id:
+        type: string
+      info:
+        $ref: '#/definitions/run.RunInfo'
+      inputs:
+        $ref: '#/definitions/run.RunInputs'
+      lifecycle_stage:
+        type: string
+      run_id:
+        type: string
+      run_name:
+        type: string
+      run_uuid:
+        type: string
+      start_time:
+        type: integer
+      status:
+        type: string
+      user_id:
+        type: string
+    type: object
+  run.RunData:
+    properties:
+      metrics:
+        items:
+          $ref: '#/definitions/run.Metric'
+        type: array
+      params:
+        items:
+          $ref: '#/definitions/run.Param'
+        type: array
+      tags:
+        items:
+          $ref: '#/definitions/run.RunTag'
+        type: array
+    type: object
+  run.RunInfo:
+    properties:
+      artifact_uri:
+        type: string
+      end_time:
+        type: integer
+      experiment_id:
+        type: string
+      lifecycle_stage:
+        type: string
+      run_id:
+        type: string
+      run_name:
+        type: string
+      run_uuid:
+        type: string
+      start_time:
+        type: integer
+      status:
+        type: string
+      user_id:
+        type: string
+    type: object
+  run.RunInputs:
+    properties:
+      dataset_inputs:
+        items:
+          $ref: '#/definitions/run.DatasetInput'
+        type: array
+    type: object
+  run.RunTag:
+    properties:
+      key:
+        type: string
+      value:
+        type: string
+    type: object
 externalDocs:
   description: OpenAPI
   url: https://swagger.io/resources/open-api/
@@ -32,9 +163,26 @@ paths:
         "200":
           description: OK
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/experiment.Experiment'
       summary: Get metadata for an experiment
+  /2.0/mlflow/runs/get:
+    get:
+      description: Get metadata for a run
+      operationId: get-run
+      parameters:
+      - description: ID of the associated run
+        in: query
+        name: run_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/run.Run'
+      summary: Get metadata for a run
 schemes:
 - http
 swagger: "2.0"
