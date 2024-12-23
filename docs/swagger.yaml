@@ -4,12 +4,10 @@ definitions:
     properties:
       artifact_location:
         type: string
-      creation_time:
-        type: integer
+      creation_time: {}
       experiment_id:
         type: string
-      last_update_time:
-        type: integer
+      last_update_time: {}
       lifecycle_stage:
         type: string
       name:
@@ -20,6 +18,95 @@ definitions:
         type: array
     type: object
   experiment.ExperimentTag:
+    properties:
+      key:
+        type: string
+      value:
+        type: string
+    type: object
+  registeredmodel.ModelVersion:
+    properties:
+      aliases:
+        items:
+          type: string
+        type: array
+      creation_timestamp: {}
+      current_stage:
+        type: string
+      description:
+        type: string
+      last_updated_timestamp: {}
+      name:
+        type: string
+      run_id:
+        type: string
+      run_link:
+        type: string
+      source:
+        type: string
+      status:
+        $ref: '#/definitions/registeredmodel.ModelVersionStatus'
+      status_message:
+        type: string
+      tags:
+        items:
+          $ref: '#/definitions/registeredmodel.ModelVersionTag'
+        type: array
+      user_id:
+        type: string
+      version:
+        type: string
+    type: object
+  registeredmodel.ModelVersionStatus:
+    enum:
+    - PENDING_REGISTRATION
+    - FAILED_REGISTRATION
+    - READY
+    type: string
+    x-enum-varnames:
+    - PendingRegistration
+    - FailedRegistration
+    - Ready
+  registeredmodel.ModelVersionTag:
+    properties:
+      key:
+        type: string
+      value:
+        type: string
+    type: object
+  registeredmodel.RegisteredModel:
+    properties:
+      aliases:
+        items:
+          $ref: '#/definitions/registeredmodel.RegisteredModelAlias'
+        type: array
+      creation_timestamp:
+        type: integer
+      description:
+        type: string
+      last_updated_timestamp:
+        type: integer
+      latest_versions:
+        items:
+          $ref: '#/definitions/registeredmodel.ModelVersion'
+        type: array
+      name:
+        type: string
+      tags:
+        items:
+          $ref: '#/definitions/registeredmodel.RegisteredModelTag'
+        type: array
+      user_id:
+        type: string
+    type: object
+  registeredmodel.RegisteredModelAlias:
+    properties:
+      key:
+        type: string
+      value:
+        type: string
+    type: object
+  registeredmodel.RegisteredModelTag:
     properties:
       key:
         type: string
@@ -55,8 +142,7 @@ definitions:
         type: string
       data:
         $ref: '#/definitions/run.RunData'
-      end_time:
-        type: integer
+      end_time: {}
       experiment_id:
         type: string
       info:
@@ -71,8 +157,7 @@ definitions:
         type: string
       run_uuid:
         type: string
-      start_time:
-        type: integer
+      start_time: {}
       status:
         type: string
       user_id:
@@ -165,6 +250,24 @@ paths:
           schema:
             $ref: '#/definitions/experiment.Experiment'
       summary: Get metadata for an experiment
+  /2.0/mlflow/registered-models/get:
+    get:
+      description: Get metadata for a registered model
+      operationId: get-registered-model
+      parameters:
+      - description: Registered model unique name identifier
+        in: query
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/registeredmodel.RegisteredModel'
+      summary: Get metadata for a registered model
   /2.0/mlflow/runs/get:
     get:
       description: Get metadata for a run

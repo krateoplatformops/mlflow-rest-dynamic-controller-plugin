@@ -119,8 +119,8 @@ type Run struct {
 	ExperimentId   string    `json:"experiment_id"`
 	UserId         string    `json:"user_id"`
 	Status         string    `json:"status"`
-	StartTime      int64     `json:"start_time"`
-	EndTime        int64     `json:"end_time"`
+	StartTime      any       `json:"start_time"`
+	EndTime        any       `json:"end_time"`
 	ArtifactUri    string    `json:"artifact_uri"`
 	LifecycleStage string    `json:"lifecycle_stage"`
 	Info           RunInfo   `json:"info"`
