@@ -46,6 +46,10 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(fmt.Sprint("Error: ", err)))
 	}
 
+	if r.Header.Get("Authorization") != "" {
+		req.Header.Set("Authorization", r.Header.Get("Authorization"))
+	}
+
 	resp, err := h.Client.Do(req)
 	if err != nil {
 		h.Log.Error("calling MLFlow Experiment GET API", slog.Any("error", err))
@@ -66,6 +70,7 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				err = json.Unmarshal(body, &experiment)
 				if err != nil {
 					h.Log.Error("unmarshalling response body", slog.Any("error", err))
+					fmt.Println("body", string(body))
 					w.Write([]byte(fmt.Sprint("Error: ", err)))
 				}
 

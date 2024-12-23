@@ -51,6 +51,33 @@ const docTemplate = `{
                 }
             }
         },
+        "/2.0/mlflow/registered-models/get": {
+            "get": {
+                "description": "Get metadata for a registered model",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Get metadata for a registered model",
+                "operationId": "get-registered-model",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Registered model unique name identifier",
+                        "name": "name",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/registeredmodel.RegisteredModel"
+                        }
+                    }
+                }
+            }
+        },
         "/2.0/mlflow/runs/get": {
             "get": {
                 "description": "Get metadata for a run",
@@ -86,15 +113,11 @@ const docTemplate = `{
                 "artifact_location": {
                     "type": "string"
                 },
-                "creation_time": {
-                    "type": "integer"
-                },
+                "creation_time": {},
                 "experiment_id": {
                     "type": "string"
                 },
-                "last_update_time": {
-                    "type": "integer"
-                },
+                "last_update_time": {},
                 "lifecycle_stage": {
                     "type": "string"
                 },
@@ -110,6 +133,139 @@ const docTemplate = `{
             }
         },
         "experiment.ExperimentTag": {
+            "type": "object",
+            "properties": {
+                "key": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                }
+            }
+        },
+        "registeredmodel.ModelVersion": {
+            "type": "object",
+            "properties": {
+                "aliases": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "creation_timestamp": {},
+                "current_stage": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "last_updated_timestamp": {},
+                "name": {
+                    "type": "string"
+                },
+                "run_id": {
+                    "type": "string"
+                },
+                "run_link": {
+                    "type": "string"
+                },
+                "source": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/registeredmodel.ModelVersionStatus"
+                },
+                "status_message": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/registeredmodel.ModelVersionTag"
+                    }
+                },
+                "user_id": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "string"
+                }
+            }
+        },
+        "registeredmodel.ModelVersionStatus": {
+            "type": "string",
+            "enum": [
+                "PENDING_REGISTRATION",
+                "FAILED_REGISTRATION",
+                "READY"
+            ],
+            "x-enum-varnames": [
+                "PendingRegistration",
+                "FailedRegistration",
+                "Ready"
+            ]
+        },
+        "registeredmodel.ModelVersionTag": {
+            "type": "object",
+            "properties": {
+                "key": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                }
+            }
+        },
+        "registeredmodel.RegisteredModel": {
+            "type": "object",
+            "properties": {
+                "aliases": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/registeredmodel.RegisteredModelAlias"
+                    }
+                },
+                "creation_timestamp": {
+                    "type": "integer"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "last_updated_timestamp": {
+                    "type": "integer"
+                },
+                "latest_versions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/registeredmodel.ModelVersion"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/registeredmodel.RegisteredModelTag"
+                    }
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "registeredmodel.RegisteredModelAlias": {
+            "type": "object",
+            "properties": {
+                "key": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                }
+            }
+        },
+        "registeredmodel.RegisteredModelTag": {
             "type": "object",
             "properties": {
                 "key": {
@@ -165,9 +321,7 @@ const docTemplate = `{
                 "data": {
                     "$ref": "#/definitions/run.RunData"
                 },
-                "end_time": {
-                    "type": "integer"
-                },
+                "end_time": {},
                 "experiment_id": {
                     "type": "string"
                 },
@@ -189,9 +343,7 @@ const docTemplate = `{
                 "run_uuid": {
                     "type": "string"
                 },
-                "start_time": {
-                    "type": "integer"
-                },
+                "start_time": {},
                 "status": {
                     "type": "string"
                 },
