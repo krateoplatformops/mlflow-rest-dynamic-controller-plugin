@@ -18,7 +18,9 @@ import (
 	"github.com/krateoplatformops/mlflow-rest-dynamic-controller-plugin/internal/handlers"
 	"github.com/krateoplatformops/mlflow-rest-dynamic-controller-plugin/internal/handlers/experiment"
 	"github.com/krateoplatformops/mlflow-rest-dynamic-controller-plugin/internal/handlers/registeredmodel"
-	"github.com/krateoplatformops/mlflow-rest-dynamic-controller-plugin/internal/handlers/run"
+	createrun "github.com/krateoplatformops/mlflow-rest-dynamic-controller-plugin/internal/handlers/run/create"
+	getrun "github.com/krateoplatformops/mlflow-rest-dynamic-controller-plugin/internal/handlers/run/get"
+
 	httpSwagger "github.com/swaggo/http-swagger"
 )
 
@@ -78,7 +80,8 @@ func main() {
 	healthy := int32(0)
 
 	mux.Handle("GET /2.0/mlflow/experiments/get", experiment.GetExperiment(opts))
-	mux.Handle("GET /2.0/mlflow/runs/get", run.GetRun(opts))
+	mux.Handle("GET /2.0/mlflow/runs/get", getrun.GetRun(opts))
+	mux.Handle("POST /2.0/mlflow/runs/create", createrun.CreateRun(opts))
 	mux.Handle("GET /2.0/mlflow/registered-models/get", registeredmodel.GetRegisteredModel(opts))
 	mux.Handle("/swagger/", httpSwagger.WrapHandler)
 

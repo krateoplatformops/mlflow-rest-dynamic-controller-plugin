@@ -8,9 +8,10 @@ import (
 	"net/http"
 
 	"github.com/krateoplatformops/mlflow-rest-dynamic-controller-plugin/internal/handlers"
+	"github.com/krateoplatformops/mlflow-rest-dynamic-controller-plugin/internal/handlers/run"
 )
 
-func GetRun(opts handlers.HandlerOptions) handlers.Handler {
+func CreateRun(opts handlers.HandlerOptions) handlers.Handler {
 	return &handler{
 		HandlerOptions: opts,
 	}
@@ -28,19 +29,16 @@ type handler struct {
 // @Param run_id query string true "ID of the associated run"
 // @Produce json
 // @Success 200 {object} Run
-// @Router /2.0/mlflow/runs/get [get]
+// @Router /2.0/mlflow/runs/create [post]
 func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	run_id := r.URL.Query().Get("run_id")
-
 	log := h.Log.With(
-		"Performing", "/2.0/mlflow/runs/get [get]",
-		"run_id", run_id)
+		"Performing", "/2.0/mlflow/runs/create [POST]")
 
-	log.Debug("Calling MLFlow Experiment API")
+	log.Debug("Calling MLFlow Run API")
 
-	url := h.Server.String() + "/2.0/mlflow/runs/get?run_id=" + run_id
+	url := h.Server.String() + "/2.0/mlflow/runs/create"
 
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest("POST", url, r.Body)
 	if err != nil {
 		h.Log.Error("creating request", slog.Any("error", err))
 		w.Write([]byte(fmt.Sprint("Error: ", err)))
@@ -49,9 +47,11 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		req.Header.Set("Authorization", r.Header.Get("Authorization"))
 	}
 
+	// set application/json content type
+	req.Header.Set("Content-Type", "application/json")
 	resp, err := h.Client.Do(req)
 	if err != nil {
-		h.Log.Error("calling MLFlow Experiment GET API", slog.Any("error", err))
+		h.Log.Error("calling MLFlow Run POST API", slog.Any("error", err))
 		w.Write([]byte(fmt.Sprint("Error: ", err)))
 	}
 
@@ -65,7 +65,7 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					w.Write([]byte(fmt.Sprint("Error: ", err)))
 				}
 
-				var run RunResponse
+				var run run.RunResponse
 				err = json.Unmarshal(body, &run)
 				if err != nil {
 					h.Log.Error("unmarshalling response body", slog.Any("error", err))
@@ -89,6 +89,9 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				log.Debug("Successfully called", slog.Any("URL", req.URL))
 				return
 			}
+		} else {
+			w.WriteHeader(resp.StatusCode)
+			w.Write([]byte(fmt.Sprint("Error: ", resp.Status)))
 		}
 	}
 
