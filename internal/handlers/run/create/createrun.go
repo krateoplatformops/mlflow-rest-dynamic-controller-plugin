@@ -1,6 +1,7 @@
 package run
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -23,76 +24,98 @@ type handler struct {
 	handlers.HandlerOptions
 }
 
-// @Summary Get metadata for a run
-// @Description Get metadata for a run
-// @ID get-run
-// @Param run_id query string true "ID of the associated run"
+// @Summary Create a new run
+// @Description Create a new run
+// @ID create-run
+// @Accept json
 // @Produce json
 // @Success 200 {object} Run
 // @Router /2.0/mlflow/runs/create [post]
 func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	log := h.Log.With(
-		"Performing", "/2.0/mlflow/runs/create [POST]")
+		"operation", "createRun",
+		"method", "POST",
+	)
 
-	log.Debug("Calling MLFlow Run API")
-
-	url := h.Server.String() + "/2.0/mlflow/runs/create"
-
-	req, err := http.NewRequest("POST", url, r.Body)
+	// Read and validate request body
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		h.Log.Error("creating request", slog.Any("error", err))
-		w.Write([]byte(fmt.Sprint("Error: ", err)))
+		log.Error("reading request body", slog.Any("error", err))
+		http.Error(w, "failed to read request", http.StatusBadRequest)
+		return
 	}
-	if r.Header.Get("Authorization") != "" {
-		req.Header.Set("Authorization", r.Header.Get("Authorization"))
+	defer r.Body.Close()
+
+	// Create API request
+	url := h.Server.String() + "/2.0/mlflow/runs/create"
+	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(body))
+	if err != nil {
+		log.Error("creating request", slog.Any("error", err))
+		http.Error(w, "failed to create request", http.StatusInternalServerError)
+		return
 	}
 
-	// set application/json content type
+	// Forward authorization header if present
+	if authHeader := r.Header.Get("Authorization"); authHeader != "" {
+		req.Header.Set("Authorization", authHeader)
+	}
 	req.Header.Set("Content-Type", "application/json")
+
+	// Execute request
 	resp, err := h.Client.Do(req)
 	if err != nil {
-		h.Log.Error("calling MLFlow Run POST API", slog.Any("error", err))
-		w.Write([]byte(fmt.Sprint("Error: ", err)))
+		log.Error("calling MLFlow API", slog.Any("error", err))
+		http.Error(w, "failed to call MLFlow API", http.StatusInternalServerError)
+		return
+	}
+	defer resp.Body.Close()
+
+	// Read response body
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Error("reading response body", slog.Any("error", err))
+		http.Error(w, "failed to read response", http.StatusInternalServerError)
+		return
 	}
 
-	if resp != nil {
-		// read response body
-		if resp.StatusCode == http.StatusOK {
-			if resp.Body != nil {
-				body, err := io.ReadAll(resp.Body)
-				if err != nil {
-					h.Log.Error("reading response body", slog.Any("error", err))
-					w.Write([]byte(fmt.Sprint("Error: ", err)))
-				}
-
-				var run run.RunResponse
-				err = json.Unmarshal(body, &run)
-				if err != nil {
-					h.Log.Error("unmarshalling response body", slog.Any("error", err))
-					w.Write([]byte(fmt.Sprint("Error: ", err)))
-				}
-
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(http.StatusOK)
-				run.Run.RunId = run.Run.Info.RunId
-				run.Run.RunUuid = run.Run.Info.RunUuid
-				run.Run.RunName = run.Run.Info.RunName
-				run.Run.ExperimentId = run.Run.Info.ExperimentId
-				run.Run.UserId = run.Run.Info.UserId
-				run.Run.Status = run.Run.Info.Status
-				err = json.NewEncoder(w).Encode(run.Run)
-				if err != nil {
-					h.Log.Error("encoding response body", slog.Any("error", err))
-					w.Write([]byte(fmt.Sprint("Error: ", err)))
-				}
-
-				log.Debug("Successfully called", slog.Any("URL", req.URL))
-				return
-			}
-		} else {
-			w.WriteHeader(resp.StatusCode)
-			w.Write([]byte(fmt.Sprint("Error: ", resp.Status)))
-		}
+	// Handle non-200 responses
+	if resp.StatusCode != http.StatusOK {
+		log.Error("MLFlow API error",
+			"status", resp.StatusCode,
+			"response", string(respBody),
+		)
+		http.Error(w, fmt.Sprintf("MLFlow API error: %s", string(respBody)), resp.StatusCode)
+		return
 	}
 
+	// Parse response
+	var runResp run.RunResponse
+	if err := json.Unmarshal(respBody, &runResp); err != nil {
+		log.Error("unmarshalling response", slog.Any("error", err))
+		http.Error(w, "failed to parse response", http.StatusInternalServerError)
+		return
+	}
+
+	// Map response fields
+	runResp.Run.RunId = runResp.Run.Info.RunId
+	runResp.Run.RunUuid = runResp.Run.Info.RunUuid
+	runResp.Run.RunName = runResp.Run.Info.RunName
+	runResp.Run.ExperimentId = runResp.Run.Info.ExperimentId
+	runResp.Run.UserId = runResp.Run.Info.UserId
+	runResp.Run.Status = runResp.Run.Info.Status
+
+	// Write response
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	if err := json.NewEncoder(w).Encode(runResp.Run); err != nil {
+		log.Error("encoding response", slog.Any("error", err))
+		// Can't write error to client as headers are already sent
+		return
+	}
+
+	log.Debug("successfully created run",
+		"url", req.URL.String(),
+		"status", http.StatusOK,
+	)
 }
