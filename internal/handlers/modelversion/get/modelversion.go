@@ -29,7 +29,7 @@ type handler struct {
 // @Param name query string true "Name of the registered model"
 // @Param version query string true "Model version number"
 // @Produce json
-// @Success 200 {object} ModelVersion
+// @Success 200 {object} map[string]any
 // @Router /2.0/mlflow/model-versions/get [get]
 func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	name := r.URL.Query().Get("name")

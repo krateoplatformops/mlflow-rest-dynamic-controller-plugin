@@ -27,7 +27,7 @@ type handler struct {
 // @ID get-registered-model
 // @Param name query string true "Registered model unique name identifier"
 // @Produce json
-// @Success 200 {object} RegisteredModel
+// @Success 200 {object} map[string]any
 // @Router /2.0/mlflow/registered-models/get [get]
 func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	name := r.URL.Query().Get("name")
