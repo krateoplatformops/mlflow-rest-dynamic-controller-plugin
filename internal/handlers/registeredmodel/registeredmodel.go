@@ -92,9 +92,18 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
-	if err := json.NewEncoder(w).Encode(model.RegisteredModel); err != nil {
-		log.Error("encoding response", slog.Any("error", err))
-		return
+	if model.RegisteredModel != nil {
+		if err := json.NewEncoder(w).Encode(model.RegisteredModel); err != nil {
+			log.Error("encoding response", slog.Any("error", err))
+			return
+		}
+	}
+
+	if model.RegisteredModelCamelCase != nil {
+		if err := json.NewEncoder(w).Encode(model.RegisteredModelCamelCase); err != nil {
+			log.Error("encoding response", slog.Any("error", err))
+			return
+		}
 	}
 
 	log.Debug("successfully processed request",

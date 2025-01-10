@@ -101,10 +101,19 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
-	if err := json.NewEncoder(w).Encode(model.ModelVersion); err != nil {
-		log.Error("encoding response", slog.Any("error", err))
-		// Cannot write error to client at this point as headers are already sent
-		return
+	if model.ModelVersion != nil {
+		if err := json.NewEncoder(w).Encode(model.ModelVersion); err != nil {
+			log.Error("encoding response", slog.Any("error", err))
+			// Cannot write error to client at this point as headers are already sent
+			return
+		}
+	}
+
+	if model.ModelVersionCamelCase != nil {
+		if err := json.NewEncoder(w).Encode(model.ModelVersionCamelCase); err != nil {
+			log.Error("encoding response", slog.Any("error", err))
+			return
+		}
 	}
 
 	log.Debug("successfully processed request",

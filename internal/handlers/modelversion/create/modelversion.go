@@ -104,10 +104,19 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	var model modelversion.ModelVersionResponse
 
-	if err := json.Unmarshal(body, &model); err != nil {
-		log.Error("unmarshalling response", slog.Any("error", err))
-		http.Error(w, "failed to parse response", http.StatusInternalServerError)
-		return
+	if model.ModelVersion != nil {
+		if err := json.NewEncoder(w).Encode(model.ModelVersion); err != nil {
+			log.Error("encoding response", slog.Any("error", err))
+			// Cannot write error to client at this point as headers are already sent
+			return
+		}
+	}
+
+	if model.ModelVersionCamelCase != nil {
+		if err := json.NewEncoder(w).Encode(model.ModelVersionCamelCase); err != nil {
+			log.Error("encoding response", slog.Any("error", err))
+			return
+		}
 	}
 
 	// Set response headers
