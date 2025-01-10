@@ -75,6 +75,7 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Header.Get("Authorization") != "" {
 		req.Header.Set("Authorization", r.Header.Get("Authorization"))
 	}
+	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := h.Client.Do(req)
 	if err != nil {
