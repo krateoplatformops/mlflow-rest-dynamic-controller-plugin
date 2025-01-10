@@ -31,59 +31,74 @@ type handler struct {
 // @Router /2.0/mlflow/registered-models/get [get]
 func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	name := r.URL.Query().Get("name")
-
-	log := h.Log.With(
-		"Performing", "/2.0/mlflow/registered-models/get [GET]",
-		"name", name)
-
-	log.Debug("Calling MLFlow Experiment API")
-
-	url := h.Server.String() + "/2.0/mlflow/registered-models/get?name=" + name
-
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		h.Log.Error("creating request", slog.Any("error", err))
-		w.Write([]byte(fmt.Sprint("Error: ", err)))
+	if name == "" {
+		http.Error(w, "missing required parameter: name", http.StatusBadRequest)
+		return
 	}
 
-	if r.Header.Get("Authorization") != "" {
-		req.Header.Set("Authorization", r.Header.Get("Authorization"))
+	log := h.Log.With(
+		"operation", "/2.0/mlflow/registered-models/get",
+		"method", "GET",
+		"name", name,
+	)
+
+	log.Debug("calling MLFlow Registered Model API")
+
+	url := fmt.Sprintf("%s/2.0/mlflow/registered-models/get?name=%s", h.Server.String(), name)
+
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		log.Error("creating request", slog.Any("error", err))
+		http.Error(w, "failed to create request", http.StatusInternalServerError)
+		return
+	}
+
+	// Forward authorization header if present
+	if authHeader := r.Header.Get("Authorization"); authHeader != "" {
+		req.Header.Set("Authorization", authHeader)
 	}
 
 	resp, err := h.Client.Do(req)
 	if err != nil {
-		h.Log.Error("calling MLFlow Experiment GET API", slog.Any("error", err))
-		w.Write([]byte(fmt.Sprint("Error: ", err)))
+		log.Error("calling MLFlow API", slog.Any("error", err))
+		http.Error(w, "failed to call MLFlow API", http.StatusInternalServerError)
+		return
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Error("reading response body", slog.Any("error", err))
+		http.Error(w, "failed to read response", http.StatusInternalServerError)
+		return
 	}
 
-	if resp != nil {
-		// read response body
-		if resp.StatusCode == http.StatusOK {
-			if resp.Body != nil {
-				body, err := io.ReadAll(resp.Body)
-				if err != nil {
-					h.Log.Error("reading response body", slog.Any("error", err))
-					w.Write([]byte(fmt.Sprint("Error: ", err)))
-				}
-
-				var model RegisteredModelResponse
-				err = json.Unmarshal(body, &model)
-				if err != nil {
-					h.Log.Error("unmarshalling response body", slog.Any("error", err))
-					w.Write([]byte(fmt.Sprint("Error: ", err)))
-				}
-
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(http.StatusOK)
-				err = json.NewEncoder(w).Encode(model.RegisteredModel)
-				if err != nil {
-					h.Log.Error("encoding response body", slog.Any("error", err))
-					w.Write([]byte(fmt.Sprint("Error: ", err)))
-				}
-
-				log.Debug("Successfully called", slog.Any("URL", req.URL))
-				return
-			}
-		}
+	if resp.StatusCode != http.StatusOK {
+		log.Error("MLFlow API error",
+			"status", resp.StatusCode,
+			"response", string(body),
+		)
+		http.Error(w, fmt.Sprintf("MLFlow API error: %s", string(body)), resp.StatusCode)
+		return
 	}
+
+	var model RegisteredModelResponse
+	if err := json.Unmarshal(body, &model); err != nil {
+		log.Error("unmarshalling response", slog.Any("error", err))
+		http.Error(w, "failed to parse response", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	if err := json.NewEncoder(w).Encode(model.RegisteredModel); err != nil {
+		log.Error("encoding response", slog.Any("error", err))
+		return
+	}
+
+	log.Debug("successfully processed request",
+		"url", req.URL.String(),
+		"status", http.StatusOK,
+	)
 }

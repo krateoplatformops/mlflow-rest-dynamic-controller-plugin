@@ -17,8 +17,11 @@ import (
 	"github.com/krateoplatformops/mlflow-rest-dynamic-controller-plugin/internal/env"
 	"github.com/krateoplatformops/mlflow-rest-dynamic-controller-plugin/internal/handlers"
 	"github.com/krateoplatformops/mlflow-rest-dynamic-controller-plugin/internal/handlers/experiment"
+	createmodelversion "github.com/krateoplatformops/mlflow-rest-dynamic-controller-plugin/internal/handlers/modelversion/create"
+	getmodelversion "github.com/krateoplatformops/mlflow-rest-dynamic-controller-plugin/internal/handlers/modelversion/get"
 	"github.com/krateoplatformops/mlflow-rest-dynamic-controller-plugin/internal/handlers/registeredmodel"
 	createrun "github.com/krateoplatformops/mlflow-rest-dynamic-controller-plugin/internal/handlers/run/create"
+
 	getrun "github.com/krateoplatformops/mlflow-rest-dynamic-controller-plugin/internal/handlers/run/get"
 
 	httpSwagger "github.com/swaggo/http-swagger"
@@ -83,6 +86,8 @@ func main() {
 	mux.Handle("GET /2.0/mlflow/runs/get", getrun.GetRun(opts))
 	mux.Handle("POST /2.0/mlflow/runs/create", createrun.CreateRun(opts))
 	mux.Handle("GET /2.0/mlflow/registered-models/get", registeredmodel.GetRegisteredModel(opts))
+	mux.Handle("GET /2.0/mlflow/model-versions/get", getmodelversion.GetModelVersion(opts))
+	mux.Handle("POST /2.0/mlflow/model-versions/create", createmodelversion.CreateModelVersion(opts))
 	mux.Handle("/swagger/", httpSwagger.WrapHandler)
 
 	server := &http.Server{

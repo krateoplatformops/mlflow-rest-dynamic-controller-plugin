@@ -1,7 +1,6 @@
-package run
+package modelversion
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -9,10 +8,10 @@ import (
 	"net/http"
 
 	"github.com/krateoplatformops/mlflow-rest-dynamic-controller-plugin/internal/handlers"
-	"github.com/krateoplatformops/mlflow-rest-dynamic-controller-plugin/internal/handlers/run"
+	"github.com/krateoplatformops/mlflow-rest-dynamic-controller-plugin/internal/handlers/modelversion"
 )
 
-func CreateRun(opts handlers.HandlerOptions) handlers.Handler {
+func GetModelVersion(opts handlers.HandlerOptions) handlers.Handler {
 	return &handler{
 		HandlerOptions: opts,
 	}
@@ -24,31 +23,36 @@ type handler struct {
 	handlers.HandlerOptions
 }
 
-// @Summary Create a new run
-// @Description Create a new run
-// @ID create-run
-// @Accept json
+// @Summary Get metadata for a model version
+// @Description Get metadata for a model version
+// @ID get-model-version
+// @Param name query string true "Name of the registered model"
+// @Param version query string true "Model version number"
 // @Produce json
-// @Success 200 {object} Run
-// @Router /2.0/mlflow/runs/create [post]
+// @Success 200 {object} ModelVersion
+// @Router /2.0/mlflow/model-versions/get [get]
 func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	log := h.Log.With(
-		"operation", "createRun",
-		"method", "POST",
-	)
+	name := r.URL.Query().Get("name")
+	version := r.URL.Query().Get("version")
 
-	// Read and validate request body
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		log.Error("reading request body", slog.Any("error", err))
-		http.Error(w, "failed to read request", http.StatusBadRequest)
+	// Validate required parameters
+	if name == "" || version == "" {
+		http.Error(w, "missing required parameters: name and version", http.StatusBadRequest)
 		return
 	}
-	defer r.Body.Close()
 
-	// Create API request
-	url := h.Server.String() + "/2.0/mlflow/runs/create"
-	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(body))
+	log := h.Log.With(
+		"operation", "/2.0/mlflow/model-versions/get",
+		"method", "GET",
+		"name", name,
+		"version", version,
+	)
+
+	log.Debug("calling MLFlow Model Version API")
+
+	url := fmt.Sprintf("%s/2.0/mlflow/model-versions/get?name=%s&version=%s", h.Server.String(), name, version)
+
+	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		log.Error("creating request", slog.Any("error", err))
 		http.Error(w, "failed to create request", http.StatusInternalServerError)
@@ -59,9 +63,7 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if authHeader := r.Header.Get("Authorization"); authHeader != "" {
 		req.Header.Set("Authorization", authHeader)
 	}
-	req.Header.Set("Content-Type", "application/json")
 
-	// Execute request
 	resp, err := h.Client.Do(req)
 	if err != nil {
 		log.Error("calling MLFlow API", slog.Any("error", err))
@@ -71,7 +73,7 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer resp.Body.Close()
 
 	// Read response body
-	respBody, err := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Error("reading response body", slog.Any("error", err))
 		http.Error(w, "failed to read response", http.StatusInternalServerError)
@@ -82,39 +84,30 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if resp.StatusCode != http.StatusOK {
 		log.Error("MLFlow API error",
 			"status", resp.StatusCode,
-			"response", string(respBody),
+			"response", string(body),
 		)
-		http.Error(w, fmt.Sprintf("MLFlow API error: %s", string(respBody)), resp.StatusCode)
+		http.Error(w, fmt.Sprintf("MLFlow API error: %s", string(body)), resp.StatusCode)
 		return
 	}
 
-	// Parse response
-	var runResp run.RunResponse
-	if err := json.Unmarshal(respBody, &runResp); err != nil {
+	var model modelversion.ModelVersionResponse
+	if err := json.Unmarshal(body, &model); err != nil {
 		log.Error("unmarshalling response", slog.Any("error", err))
 		http.Error(w, "failed to parse response", http.StatusInternalServerError)
 		return
 	}
 
-	// Map response fields
-	runResp.Run.RunId = runResp.Run.Info.RunId
-	runResp.Run.RunUuid = runResp.Run.Info.RunUuid
-	runResp.Run.RunName = runResp.Run.Info.RunName
-	runResp.Run.ExperimentId = runResp.Run.Info.ExperimentId
-	runResp.Run.UserId = runResp.Run.Info.UserId
-	runResp.Run.Status = runResp.Run.Info.Status
-
-	// Write response
+	// Set response headers
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
-	if err := json.NewEncoder(w).Encode(runResp.Run); err != nil {
+	if err := json.NewEncoder(w).Encode(model.ModelVersion); err != nil {
 		log.Error("encoding response", slog.Any("error", err))
-		// Can't write error to client as headers are already sent
+		// Cannot write error to client at this point as headers are already sent
 		return
 	}
 
-	log.Debug("successfully created run",
+	log.Debug("successfully processed request",
 		"url", req.URL.String(),
 		"status", http.StatusOK,
 	)
